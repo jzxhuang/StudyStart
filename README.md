@@ -5,8 +5,8 @@ StudyStart generates questions based on your notes and quizzes you on content yo
 
 ## Demo
 While we haven't published any of StudyStart's integrations publically, here is a preview of what it looks like:
-![Image not found](preview1.png)
-![Image nto found](preview2.jpg)
+![Image not found](preview1.PNG)
+![Image not found](preview2.jpg)
 
 ## About
 StudyStart has two components, a smart conversational agent engine built on DialogFlow and a Python backend using NLTK to analyze text and generate facts.
