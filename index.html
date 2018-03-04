@@ -2,112 +2,46 @@
 <html>
 
 <head>
-    <title>Page Title</title>
+    <title>Study Start</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
-    <style>
-        body {
-            margin: 0;
-            height: 90vh;
-        }
-
-        .nav {
-            width: 100%;
-            height: 50px;
-            position: fix;
-            top: 0;
-            background-color: black;
-            display: flex;
-            align-items: center;
-        }
-
-        .logo {
-            width: 200px;
-            margin-left: 5px;
-        }
-
-        .content {
-            display: flex;
-            align-items: center;
-            height: 100%;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        #ask-input {
-            display: flex;
-            align-items: center;
-            height: 100%;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        #type-input {
-            width: 250px;
-            height: 25px;
-            border-radius: 10px;
-            border: 2px solid #4CAF50;
-        }
-
-        .user-input {
-            display: flex;
-            flex-direction: column;
-        }
-
-        #type-input {
-            outline: none;
-            padding: 0 10px;
-        }
-
-        #file-input {
-            width: 190px;
-            margin-top: 4px;
-            margin-left: 8px;
-        }
-
-        .submit-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 39px;
-        }
-
-        #submit {
-            border-radius: 10px;
-            border: 2px solid #4CAF50;
-            width: 80px;
-            height: 25px;
-            background-color: #5fa862;
-            outline: none;
-        }
-
-        #show-data {
-            display: none;
-        }
-    </style>
-
+    <script defer src="https://use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="css/skeleton.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
-
 <body>
-    <div class="nav">
-        <img src="https://i.imgur.com/UVT2JZu.png" alt="genesys logo" class="logo" />
-    </div>
     <div class="content">
         <div id="ask-input">
-            <h1 style=" margin: 0; font-size: 55px;"> Welcome to Genscribe</h1>
-            <h3 style=" margin-top: 5px; margin-bottom: 40px;"> The best audio analyser for your meeting</h3>
+            <h1 id="title"><i class="fa fa-book"></i> Study Start</h1>
+            <h3>Upload your notes here</h3>
             <form style="display: flex" method="POST" enctype="multipart/form-data" id="myForm">
+                <div class="row">
                 <div class="user-input">
-                   <label for="topic">Topic</label>
-                    <input type="text" name="topic"/><br>
-                    <label for="url">Url</label>
-                    <input type="text" name="url" /><br>
-                    <input type="file" name="file" /><br>
+                    <div class="six columns">
+                        <label for="topic">Topic</label>
+                        <input class="u-full-width" type="text" name="topic"/><br>
+                    </div>
+                    <div class="six columns">
+			<table>
+			<tr>
+    			<td><input type="radio" name="upload_option" value="1" checked/> URL</td>	 
+			<td><input type="radio" name="upload_option" value="2" /> File</tr>
+			</tr>
+			</table>
+                    </div>
+                    <div class="six columns">
+                        <label for="url">Url</label>
+                        <input id="url-box" class="u-full-width" type="text" name="url" /><br>
+                        <input id="file-button" class="button-primary" type="file" name="file" /><br>
+                    </div>
                 </div>
                 <div class="submit-container">
-                    <input type="submit" id="btnSubmit" value="Submit">
-
+                    <input class="button-primary" type="submit" id="btnSubmit" value="Submit">
                 </div>
+            </div>
             </form>
+            <p id="credits">Made with <i class="fa fa-heart"></i> by Chantelle, Clayton, Jeffrey, and Lina</p>
+            <a id="github" href="https://github.com/jzxhuang/StudyStart">Check it out on <i class="fab fa-github"></i></a>
             <!--
             <form style="display: flex" onsubmit="myFunction(); return false;">
                 <div class="user-input">
@@ -162,6 +96,20 @@
                     }
                 });
             })
+        });
+	
+	$(document).ready(function () {
+            $('#file-button').attr('disabled', 'true');  
+            $('input:radio[name=upload_option]').click(function () {
+            var checkval = $('input:radio[name=upload_option]:checked').val();
+            if (checkval == '1') {
+                $('#url-box').removeAttr('disabled');
+    		$('#file-button').attr('disabled', 'true');
+            } else {
+    		$('#url-box').attr('disabled', 'true');
+                $('#file-button').removeAttr('disabled');
+            }
+        });
         });
 
 //        function myFunction() {
