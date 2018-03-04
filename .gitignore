@@ -1,0 +1,7 @@
+*.pem
+$RESOURCE_DIR
+archive
+*.firebaserc
+*.pub
+package-lock.json
+functions/node_modules
