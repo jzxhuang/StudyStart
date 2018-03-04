@@ -5,3 +5,10 @@ archive
 *.pub
 package-lock.json
 functions/node_modules
+config.json
+config
+dict
+lib
+factual-statement-extractor.jar
+*.sh
+verbConjugations.txt

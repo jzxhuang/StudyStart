@@ -1,11 +1,14 @@
 import os.path,subprocess
 import firebase_admin
 import nltk
+import string
 from flask import Flask, jsonify, request, Response
 from subprocess import STDOUT,PIPE
 from firebase_admin import credentials, db
 
 app = Flask(__name__)
+cred = credentials.Certificate('config.json')
+firebase_admin.initialize_app(cred, {'databaseURL': 'https://study-start-d6061.firebaseio.com'})
 
 ALLOWED_EXTENSION = set (['txt'])
 
@@ -14,54 +17,35 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def putDb(data, topic):
-    cred = credentials.Certificate('config.json')
-    firebase_admin.initialize_app(cred, {'databaseURL': 'https://study-start-d6061.firebaseio.com'})
     ref = db.reference('topics/' + topic)
     ref.set(data)
     return
 
-def tree_to_list(tree, lst, label=None):
-    parent_lst = lst
-    if label is not None:
-       lst = [label] 
-    for node in tree:
-        if type(node) != nltk.tree.Tree:
-            lst.append(node.split('/')[0])
-        else:
-            tree_to_list(node, parent_lst, node.label())
-    if label is not None:
-        parent_lst.append(lst)
-
-def make_blank(parsed_lst):
+def make_blank(tagged_lst):
     '''
-    Given a list of named entity tagged words, replace the last named entity with blank and
-    return the word that was taken out
+    Takes in a list of pos tagged words. Replaces all words from the end to the last
+    occurring conjunction/preposition/etc. to be a blank, and returns removed text as 
+    a tuple with the new string and the removed part.
     '''
+    SPLIT_TAGS = set(['CC', 'DT', 'EX', 'IN', 'TO', 'WDT', 'WP', 'WRP'])
+    new_lst = []
     answer = ''
-    for i in range(len(parsed_lst)-1, -1, -1):
-        if type(parsed_lst[i]) == list:
-            answer = parsed_lst[i][1]
-            parsed_lst[i] = 'blank'
+    for i in range(len(tagged_lst)-1, -1, -1):
+        if tagged_lst[i][1] in SPLIT_TAGS:
+            answer = ''
+            if i < len(tagged_lst) - 1:
+                answer = ' '.join([word[0] for word in tagged_lst[i + 1:] 
+                                    if word[0] not in string.punctuation])
+                tagged_lst[i] 
+            new_lst = [lst[0] for lst in tagged_lst[:i + 1]]
+            new_lst.append("blank")
             break
-    return answer
-
-def format_parse(parsed, sublist=False):
-    '''
-    Transform a named entity list into a string
-    '''
-    if sublist:
-        parsed.pop(0)
-    for i in range(len(parsed)):
-        if type(parsed[i]) == list:
-            format_parse(parsed[i], sublist=True)
-            parsed[i] = " ".join(parsed[i])    
-    return " ".join(parsed)
+    return (' '.join(new_lst), answer)
 
 # Must be binary data
 def getFacts(data):
     cmd = ["java", "-Xmx1500m", "-cp", "factual-statement-extractor.jar:lib/jwnl.jar:lib/stanford-parser-2008-10-26.jar:lib/commons-logging.jar:lib/commons-lang.jar", "edu/cmu/ark/SentenceSimplifier"]
     proc = subprocess.Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    msg = "Prime Minister Vladimir V. Putin, the country’s paramount leader, cut short a trip to Siberia, returning to Moscow to oversee the federal response. Mr. Putin built his reputation in part on his success at suppressing terrorism, so the attacks could be considered a challenge to his stature."
     stdout, stderr = proc.communicate(data)
     output = stdout.decode().split('\n')
     return output
@@ -80,7 +64,7 @@ def main():
 def do():
     topic = request.form['topic']
     print(topic)
-    data
+    data = None
     if (request.form['url']):
         print(request.form['url'])
     else:
@@ -91,28 +75,27 @@ def do():
         print(contents)
         data = contents
     output = getFacts(data)
-    putDb(output[3:-2], topic)
     print(output)
-    output = output.split('\n')
-    return 'success'
+    facts = output[3:-2]
+    print(facts)
+    # putDb(facts, topic)
+    questions_answers = make_questions(facts)
+    facts_json = {'facts': facts, 'questions': questions_answers}
+    putDb(facts_json, topic)
+    print(questions_answers)
+    return jsonify(questions_answers)
 #    return stdout.decode(), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
-@app.route('/makequestions', methods=['POST'])
-def make_questions():
-    facts = request.json['facts']
+def make_questions(facts):
     blank_facts = []
     tokenizer = nltk.tokenize.TweetTokenizer()
     for fact in facts:
         words = tokenizer.tokenize(fact)
-        tagged = nltk.ne_chunk(nltk.pos_tag(words))
-        ne_tree = nltk.tree.Tree.fromstring(str(tagged))
-        parsed = []
-        tree_to_list(ne_tree, parsed)
-        answer = make_blank(parsed)
-        parsed_str = format_parse(parsed)
+        tagged = nltk.pos_tag(words)
+        parsed_str, answer = make_blank(tagged)
         if answer != '':
             blank_facts.append({'question': parsed_str, 'answer': answer})
-    return jsonify(blank_facts)
+    return blank_facts
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
