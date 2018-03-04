@@ -24,7 +24,13 @@ const rp = require('request-promise');
 const {
     WebhookClient
 } = require('dialogflow-fulfillment');
-const {Text, Card, Image, Suggestion, Payload} = require('dialogflow-fulfillment');
+const {
+    Text,
+    Card,
+    Image,
+    Suggestion,
+    Payload
+} = require('dialogflow-fulfillment');
 
 process.env.DEBUG = 'dialogflow:debug';
 
@@ -74,54 +80,50 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         if (topic === 'starter hacks') {
             topic = 'starterhacks';
         }
-        let config = {
-            headers: {
-                'Content-Type': 'text/plain'
-            },
-            responseType: 'text'
-        };
         let url = "http://18.188.4.138:5000/";
-        console.log('topics: ' + topic);
-        let text = "Prime Minister Vladimir V. Putin, the country’s paramount leader, cut short a trip to Siberia, returning to Moscow to oversee the federal response. Mr. Putin built his reputation in part on his success at suppressing terrorism, so the attacks could be considered a challenge to his stature.";
-        let options = {
-            method: 'POST',
-            uri: url,
-            body: text
-        };
-        //        return new Promise((resolve, reject) => {
-        //            requests.post(options, (error, response, body) => {
-        //                console.log(body);
-        //                console.log(body.split("\n"));
-        //                agent.add('Here is a response');
-        //                resolve();
-        //            });
-        //        });
+        console.log('topic: ' + topic);
         return (admin.database().ref('topics/' + topic).once("value")
             .then(data => {
+                let num;
                 if (data.val()) {
-                    console.log("val: " + data.val());
-                    let myArr = data.val().split("\n");
+                    let myArr = data.val().questions;
                     console.log(myArr);
+                    num = myArr.length;
+                    if (myArr.length > 5) {
+                        num = 5;
+                    }
+                    while (myArr.length > num) {
+                        randomNum(myArr.length, remove);
+                        //                        let rand = Math.floor(Math.random() * myArr.length);
+                        function remove(index) {
+                            let removed = myArr.splice(index, 1);
+                            console.log('removed: ' + removed);
+                        }
+                    }
+                    console.log(myArr);
+                    //                    let myJson = {
+                    //                        'facts': myArr
+                    //                    };
+                    //                    return myJson;
                     let context = {
                         'name': 'topic',
-                        'lifespan': 5,
+                        'lifespan': 8,
                         'parameters': {
                             'value': topic,
                             'questions': myArr,
                             'counter': 0
                         }
                     };
+                    console.log(JSON.stringify(context));
                     agent.setContext(context);
-                    agent.add(myArr[0]);
-                    agent.add(new Suggestion('Next'));
+                    agent.add('Question 1: ' + myArr[0].question);
+                    agent.add(new Suggestion('Skip this one'));
                     agent.add(new Suggestion('Cancel'));
                 } else {
-                    agent.add("Sorry, no notes found for this topic. Try something else!");
+                    agent.add("Sorry, no notes found for this topic. Try something else, or upload notes!");
                     agent.add(new Suggestion('Quiz me about axolotl'));
                     agent.add(new Suggestion('I want to learn about StarterHacks'));
                 }
-//                agent.add("Database result: ");
-                //                agent.send();
             })
             .catch(err => {
                 console.log(err);
@@ -129,27 +131,33 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             }));
         //        agent.add('Hello you would like to study ' + topic);
     }
-    
+
     function nextTopic(agent) {
         let context = agent.getContext('topic');
-        let counter = context.parameters.counter + 1;
+        let counter = context.parameters.counter;
+        let resp = "The answer is : " + context.parameters.questions[counter].answer + ". ";
+        counter++;
         if (context.parameters.questions[counter]) {
-            if (context.parameters.questions.length -1 === counter ) {
-                agent.add("Last fact: " + context.parameters.questions[counter]);
+            if (context.parameters.questions.length - 1 === counter) {
+                resp += "Last question: " + context.parameters.questions[counter].question;
+                agent.add(resp);
             } else {
-                agent.add("Fact " + counter.toString() + ": " + context.parameters.questions[counter]);
+                resp += "Question " + (counter+1).toString() + ": " + context.parameters.questions[counter].question;
+                agent.add(resp);
             }
             context.parameters.counter++;
             agent.setContext(context);
-            agent.add(new Suggestion('Next'));
+            agent.add(new Suggestion('Skip this question'));
             agent.add(new Suggestion('Cancel'));
         } else {
-            agent.add("You've already answered all the questions about " + context.parameters.value + "!");
+            resp += ("You've answered all the questions about " + context.parameters.value + "!");
+            agent.add(resp);
+            agent.clearContext('topic');
         }
-        console.log(JSON.stringify(context));
-//        agent.add('next');
+//        console.log(JSON.stringify(context));
+        //        agent.add('next');
     }
-    
+
     function cancelTopic(agent) {
         agent.add("Alright, maybe you can study another time!");
     }
@@ -159,6 +167,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         agent.add(`I'm sorry, can you try again?`);
     }
 
+    function randomNum(max, callback) {
+        Math.floor(Math.random() * max);
+        callback();
+    }
 
     function other(agent) {
         agent.add(`This message is from Dialogflow's Cloud Functions for Firebase editor!`);

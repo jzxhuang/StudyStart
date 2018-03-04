@@ -2,6 +2,8 @@ import os.path,subprocess
 import firebase_admin
 import nltk
 import string
+import requests
+import urllib.request as urllib
 from flask import Flask, jsonify, request, Response
 from subprocess import STDOUT,PIPE
 from firebase_admin import credentials, db
@@ -62,11 +64,17 @@ def main():
 
 @app.route('/new', methods=['POST'])
 def do():
-    topic = request.form['topic']
+    topic = request.form['topic'].lower()
     print(topic)
     data = None
     if (request.form['url']):
-        print(request.form['url'])
+        url = request.form['url']
+        response = requests.get(url)
+        content_type = response.headers['content-type']
+        print(content_type)
+        if (content_type == 'text/plain'):
+            data = urllib.urlopen(url).read()
+            print(data)
     else:
         file = request.files['file']
         print(type(file))
