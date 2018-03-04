@@ -67,7 +67,7 @@ def do():
     topic = request.form['topic'].lower()
     print(topic)
     data = None
-    if (request.form['url']):
+    if (request.form['upload_option'] == '1'):
         url = request.form['url']
         response = requests.get(url)
         content_type = response.headers['content-type']
