@@ -1,6 +1,7 @@
 import os.path,subprocess
 import firebase_admin
-from flask import Flask, request, Response
+import nltk
+from flask import Flask, jsonify, request, Response
 from subprocess import STDOUT,PIPE
 from firebase_admin import credentials, db
 
@@ -18,6 +19,43 @@ def putDb(data, topic):
     ref = db.reference('topics/' + topic)
     ref.set(data)
     return
+
+def tree_to_list(tree, lst, label=None):
+    parent_lst = lst
+    if label is not None:
+       lst = [label] 
+    for node in tree:
+        if type(node) != nltk.tree.Tree:
+            lst.append(node.split('/')[0])
+        else:
+            tree_to_list(node, parent_lst, node.label())
+    if label is not None:
+        parent_lst.append(lst)
+
+def make_blank(parsed_lst):
+    '''
+    Given a list of named entity tagged words, replace the last named entity with blank and
+    return the word that was taken out
+    '''
+    answer = ''
+    for i in range(len(parsed_lst)-1, -1, -1):
+        if type(parsed_lst[i]) == list:
+            answer = parsed_lst[i][1]
+            parsed_lst[i] = 'blank'
+            break
+    return answer
+
+def format_parse(parsed, sublist=False):
+    '''
+    Transform a named entity list into a string
+    '''
+    if sublist:
+        parsed.pop(0)
+    for i in range(len(parsed)):
+        if type(parsed[i]) == list:
+            format_parse(parsed[i], sublist=True)
+            parsed[i] = " ".join(parsed[i])    
+    return " ".join(parsed)
 
 # Must be binary data
 def getFacts(data):
@@ -58,6 +96,23 @@ def do():
     output = output.split('\n')
     return 'success'
 #    return stdout.decode(), 200, {'Content-Type': 'text/plain; charset=utf-8'}
+
+@app.route('/makequestions', methods=['POST'])
+def make_questions():
+    facts = request.json['facts']
+    blank_facts = []
+    tokenizer = nltk.tokenize.TweetTokenizer()
+    for fact in facts:
+        words = tokenizer.tokenize(fact)
+        tagged = nltk.ne_chunk(nltk.pos_tag(words))
+        ne_tree = nltk.tree.Tree.fromstring(str(tagged))
+        parsed = []
+        tree_to_list(ne_tree, parsed)
+        answer = make_blank(parsed)
+        parsed_str = format_parse(parsed)
+        if answer != '':
+            blank_facts.append({'question': parsed_str, 'answer': answer})
+    return jsonify(blank_facts)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
