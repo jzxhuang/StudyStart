@@ -4,7 +4,7 @@ Study faster and smarter!
 StudyStart generates questions based on your notes and quizzes you on content you may have missed. You can access StudyStart from almost anywhere - **Slack, SMS and Google Assistant**.
 
 ## Demo
-Unfortunately you can't test out the Google Assistant app, but you can still check it out by joining this Slack channel and talking to DialogFlow bot! Try commands like:
+Unfortunately you can't test out the Google Assistant app, but you can still check it out by [joining this Slack channel](https://join.slack.com/t/studystart/shared_invite/enQtMzI1MjYxNzgyNDM4LTU2MzMxNmEyOTY3ODQ3MTIwNzRlZDhkZTAxYjA2M2M0YmVkMGRlMmM0M2IxYmQwMGFlZmY5NjE2YjYyNTgzYzc) and talking to DialogFlow bot! Try commands like:
 * Quiz me on {topic}
 * I want to learn about {topic}
 
